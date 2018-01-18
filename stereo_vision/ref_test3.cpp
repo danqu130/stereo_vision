@@ -84,12 +84,12 @@ void detectDistance(cv::Mat& pointCloud)
 	xyzSet[2].copyTo(depth);
 
 	// 根据深度阈值进行二值化处理
-	double maxVal = 0, minVal = 0;
-	cv::Mat depthThresh = cv::Mat::zeros(depth.rows, depth.cols, CV_8UC1);
-	cv::minMaxLoc(depth, &minVal, &maxVal);
-	double thrVal = minVal * 1.5;
-	cv::threshold(depth, depthThresh, thrVal, 255, CV_THRESH_BINARY_INV);
-	depthThresh.convertTo(depthThresh, CV_8UC1);
+	// double maxVal = 0, minVal = 0;
+	// cv::Mat depthThresh = cv::Mat::zeros(depth.rows, depth.cols, CV_8UC1);
+	// cv::minMaxLoc(depth, &minVal, &maxVal);
+	// double thrVal = minVal * 1.5;
+	// cv::threshold(depth, depthThresh, thrVal, 255, CV_THRESH_BINARY_INV);
+	// depthThresh.convertTo(depthThresh, CV_8UC1);
 	//imageDenoising(depthThresh, 3);
 
 	double  distance = depth.at<float>(pic_info[0], pic_info[1]);
@@ -279,11 +279,11 @@ void Stereo() {
 
 		imgDisparity16S.convertTo(imgDisparity8U, CV_8UC1, 255.0 / 1000.0);
         cv::compare(imgDisparity16S, 0, Mask, cv::CMP_GE);
-        // cv::Mat disparity;
-        // imgDisparity8U.copyTo(disparity, Mask);
+        cv::Mat disparity;
+        imgDisparity8U.copyTo(disparity, Mask);
         
-        // getPointClouds(disparity, pointClouds, Q);
-		// detectDistance(pointClouds);
+        getPointClouds(disparity, pointClouds, Q);
+		detectDistance(pointClouds);
 
 
         cv::Mat disparityShow;
@@ -292,19 +292,19 @@ void Stereo() {
 
 
 
-        sgbm->compute(imgLeft, imgRight, sgbmDisp16S);
+        // sgbm->compute(imgLeft, imgRight, sgbmDisp16S);
 
-        sgbmDisp16S.convertTo(sgbmDisp8U, CV_8UC1, 255.0 / 1000.0);
-        cv::compare(sgbmDisp16S, 0, Mask, cv::CMP_GE);
+        // sgbmDisp16S.convertTo(sgbmDisp8U, CV_8UC1, 255.0 / 1000.0);
+        // cv::compare(sgbmDisp16S, 0, Mask, cv::CMP_GE);
 
-        cv::Mat disparity;
-        sgbmDisp8U.copyTo(disparity, Mask);
-        getPointClouds(disparity, pointClouds, Q);
-		detectDistance(pointClouds);
+        // cv::Mat disparity;
+        // sgbmDisp8U.copyTo(disparity, Mask);
+        // getPointClouds(disparity, pointClouds, Q);
+		// detectDistance(pointClouds);
 
-        cv::Mat sgbmDisparityShow;
-        cv::applyColorMap(sgbmDisp8U, sgbmDisp8U, cv::COLORMAP_HSV);
-        sgbmDisp8U.copyTo(sgbmDisparityShow, Mask);
+        // cv::Mat sgbmDisparityShow;
+        // cv::applyColorMap(sgbmDisp8U, sgbmDisp8U, cv::COLORMAP_HSV);
+        // sgbmDisp8U.copyTo(sgbmDisparityShow, Mask);
         // std::cout << "imgDisparity8U.center: " << imgDisparity8U.at<float>(RESIZE_WIDTH/2, RESIZE_HEIGHT/2);
         // std::cout << "sgbmDisp8U.center: " << sgbmDisp8U.at<float>(RESIZE_WIDTH/2, RESIZE_HEIGHT/2) << std::endl;
 
@@ -313,7 +313,7 @@ void Stereo() {
 
 
 		cv::imshow("bmDisparity", disparityShow);
-        cv::imshow("sgbmDisparity", sgbmDisparityShow);
+        // cv::imshow("sgbmDisparity", sgbmDisparityShow);
         cv::imshow("rectified", canvas);
 
 
