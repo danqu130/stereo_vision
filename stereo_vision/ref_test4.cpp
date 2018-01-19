@@ -270,8 +270,8 @@ void Stereo() {
         cv::cvtColor(frame_l, frame_l_gray, CV_BGR2GRAY);
         cv::cvtColor(frame_r, frame_r_gray, CV_BGR2GRAY);
 
-        cv::remap(frame_l_gray, frame_l_remap_gray, rmap[0][0], rmap[0][1], INTER_LINEAR);
-        cv::remap(frame_r_gray, frame_r_remap_gray, rmap[1][0], rmap[1][1], INTER_LINEAR);
+        cv::remap(frame_l_gray, frame_l_remap_gray, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
+        cv::remap(frame_r_gray, frame_r_remap_gray, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
 
         cv::copyMakeBorder(frame_l_remap_gray, frame_l_board, 0, 0, stereoNumDisparities, 0, IPL_BORDER_REPLICATE);
         cv::copyMakeBorder(frame_r_remap_gray, frame_r_board, 0, 0, stereoNumDisparities, 0, IPL_BORDER_REPLICATE);
@@ -283,9 +283,9 @@ void Stereo() {
 		cv::rectangle(mask, validRoi[0], cv::Scalar(255), -1);
 		disparity.copyTo(real_disparity, mask);
 
-        cv::remap(frame_l, out_frame_l, rmap[0][0], rmap[0][1], INTER_LINEAR);
+        cv::remap(frame_l, out_frame_l, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
 		cv::rectangle(out_frame_l, validRoi[0], CV_RGB(0, 0, 255), 3);
-		cv::remap(frame_r, out_frame_r, rmap[1][0], rmap[1][1], INTER_LINEAR);
+		cv::remap(frame_r, out_frame_r, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
 		cv::rectangle(out_frame_r, validRoi[1], CV_RGB(0, 255, 0), 3);
 
         for (int j = 0; j < out_frame_l.rows; j += 32)//画平行线
@@ -298,7 +298,8 @@ void Stereo() {
 
         cv::imshow("left image", out_frame_l);
 		cv::imshow("right image", out_frame_r);
-
+        cv::imshow("Rectified", real_disparity);
+        cv::imshow("Disparity Map", DisparityMat);
 		cv::reprojectImageTo3D(real_disparity, pointCloud, Q, true);
 		for (int y = 0; y < pointCloud.rows; ++y)
 		{
@@ -309,7 +310,7 @@ void Stereo() {
 				pointCloud.at<cv::Point3f>(y, x) = point;
 			}
 		}
-		std::cout << pointCloud.at<Point3f>(240, 320).z * 1.6 << std::endl;
+		std::cout << pointCloud.at<cv::Point3f>(240, 320).z * 1.6 << std::endl;
 
         cvReleaseImage(&img);
         vcap->backFrame();
