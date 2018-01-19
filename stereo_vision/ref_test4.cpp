@@ -163,7 +163,7 @@ void mouseHandler(int event, int x, int y, int flags, void *param)
         pic_info[0] = x;
 		pic_info[1] = y;
 		cout << "x:" << x << "y:" << y << endl;
-		printf("Distance to this object is: %f cm \n", pointCloud.at<cv::Point3f>(x, y).z * 16);
+		printf("Distance to this object is: %f m \n", pointCloud.at<cv::Point3f>(x, y).z * 16);
 		left_mouse = true;
 	}
 	else if (event == CV_EVENT_LBUTTONUP)
@@ -327,7 +327,7 @@ void Stereo() {
 			}
 		}
 
-        printf("Distance to this object is: %f cm \n", pointCloud.at<cv::Point3f>(pic_info[0], pic_info[1]).z * 16);
+        printf("Distance to this object is: %f m \n", pointCloud.at<cv::Point3f>(pic_info[0], pic_info[1]).z * 16);
         cv::setMouseCallback("Disparity Map", mouseHandler, NULL);
 
         cvReleaseImage(&img);
