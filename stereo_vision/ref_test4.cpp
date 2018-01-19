@@ -26,15 +26,14 @@ int stereoDispTextureThreshold = 10;
 int stereoDispUniquenessRatio = 5;
 int _threshold, blobArea;
 bool left_mouse = false;
+int pic_info[2];
 
 
 cv::Mat cameraMatrix[2], distCoeffs[2], cameraData;
 cv::Mat R, T, E, F;
 cv::Mat R1, R2, P1, P2, Q;
-cv::Mat img1, img2, rgb, thres_img, blobs_img, img_detect, real_disparity;
-cv::Mat img1_rectified, img2_rectified,  disparityMat, view_disparityMat, depthMat, pairMat;
-std::vector<cv::Mat> rgb_detect, rgb_detect_r;
-cv::Mat r_detect, g_detect, b_detect, r_detect_r, g_detect_r, b_detect_r;
+cv::Mat pointCloud;
+
 
 cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(16 * 5, 31);
 
@@ -157,6 +156,24 @@ int getDisparityImage(cv::Mat &disparity, cv::Mat &disparityImage, bool isColor)
     return 1;
 }
 
+void mouseHandler(int event, int x, int y, int flags, void *param) 
+{
+	if (event == CV_EVENT_LBUTTONDOWN)
+	{
+        pic_info[0] = x;
+		pic_info[1] = y;
+		cout << "x:" << x << "y:" << y << endl;
+		printf("Distance to this object is: %f cm \n", pointCloud.at<cv::Point3f>(x, y).z * 16);
+		left_mouse = true;
+	}
+	else if (event == CV_EVENT_LBUTTONUP)
+	{
+		left_mouse = false;
+	}
+	else if ((event == CV_EVENT_MOUSEMOVE) && (left_mouse == true))
+	{
+	}
+}
 
 
 void Stereo() {
@@ -191,7 +208,6 @@ void Stereo() {
     cv::Mat disparity;
     cv::Mat real_disparity;
     cv::Mat DisparityMat;
-    cv::Mat pointCloud;
 
     cv::FileStorage fs("cam_stereo.yml", cv::FileStorage::READ);
 
@@ -310,7 +326,9 @@ void Stereo() {
 				pointCloud.at<cv::Point3f>(y, x) = point;
 			}
 		}
-		std::cout << pointCloud.at<cv::Point3f>(240, 320).z * 1.6 << std::endl;
+
+        printf("Distance to this object is: %f cm \n", pointCloud.at<cv::Point3f>(pic_info[0], pic_info[1]).z * 16);
+        cv::setMouseCallback("Disparity Map", mouseHandler, NULL);
 
         cvReleaseImage(&img);
         vcap->backFrame();
@@ -320,7 +338,7 @@ void Stereo() {
         }
 
         t = (double)cvGetTickCount() - t;
-        printf("Used time is %g ms, fps is %g\n", (t / (cvGetTickFrequency() * 1000)), 1000 / (t / (cvGetTickFrequency() * 1000)));
+        // printf("Used time is %g ms, fps is %g\n", (t / (cvGetTickFrequency() * 1000)), 1000 / (t / (cvGetTickFrequency() * 1000)));
     }
 
     vcap->stopCapture();
