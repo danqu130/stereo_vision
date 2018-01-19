@@ -38,8 +38,6 @@ cv::Mat r_detect, g_detect, b_detect, r_detect_r, g_detect_r, b_detect_r;
 
 cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(16 * 5, 31);
 
-double reprojectionVars[6];
-
 struct ObjectInfo {
     cv::Point       center;     //中心
     double          distance;   //距离
@@ -183,10 +181,18 @@ void Stereo() {
     cv::Size imageSize(RESIZE_WIDTH, RESIZE_HEIGHT);
     cv::Rect validRoi[2];
     cv::Mat rmap[2][2];
-    cv::Mat frame_l;
-    cv::Mat frame_r;
+    cv::Mat frame_l, frame_r;//source image
+    cv::Mat frame_l_gray, frame_r_gray;//source gray image
+    cv::Mat frame_l_remap_gray, frame_r_remap_gray;//remap source gray image
+    cv::Mat frame_l_board, frame_r_board;
+    cv::Mat out_frame_l, out_frame_r;//final image
+    cv::Mat mask;
+    cv::Mat disparity_board;
+    cv::Mat disparity;
+    cv::Mat real_disparity;
+    cv::Mat DisparityMat;
+    cv::Mat pointCloud;
 
-    // cv::Rect validRoi[2];
     cv::FileStorage fs("cam_stereo.yml", cv::FileStorage::READ);
 
     if (fs.isOpened()) {
@@ -218,15 +224,6 @@ void Stereo() {
     //Precompute maps for cv::remap()
     cv::initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
     cv::initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
-
-    reprojectionVars[0] = cameraMatrix[0].at<double>(0, 0);
-    reprojectionVars[1] = cameraMatrix[1].at<double>(0, 0);
-    reprojectionVars[2] = (-1) * T.at<double>(0, 0);
-    reprojectionVars[3] = cameraData.at<double>(0, 0);
-    std::cout << reprojectionVars[3] << std::endl;
-    reprojectionVars[4] = cameraData.at<double>(0, 1);
-    reprojectionVars[5] = cameraData.at<double>(0, 2);
-    std::cout << reprojectionVars[5] << std::endl;
 
     cv::namedWindow("Stereo Controls");
     cv::resizeWindow("Stereo Controls", 600, 300);
@@ -260,6 +257,7 @@ void Stereo() {
         frame_r = matimg(cv::Range(0, FRAME_HEIGHT), cv::Range(FRAME_WIDTH / 2, FRAME_WIDTH));
         cv::resize(frame_l, frame_l, cv::Size(RESIZE_WIDTH, RESIZE_HEIGHT));
         cv::resize(frame_r, frame_r, cv::Size(RESIZE_WIDTH, RESIZE_HEIGHT));
+
 #ifdef USE_DISPLAY
         cv::imshow(LEFT_WINDOW_NAME, frame_l);
         cv::imshow(RIGHT_WINDOW_NAME, frame_r);
@@ -269,7 +267,49 @@ void Stereo() {
             continue;
         }
 
-        stereoCorrelation();
+        cv::cvtColor(frame_l, frame_l_gray, CV_BGR2GRAY);
+        cv::cvtColor(frame_r, frame_r_gray, CV_BGR2GRAY);
+
+        cv::remap(frame_l_gray, frame_l_remap_gray, rmap[0][0], rmap[0][1], INTER_LINEAR);
+        cv::remap(frame_r_gray, frame_r_remap_gray, rmap[1][0], rmap[1][1], INTER_LINEAR);
+
+        cv::copyMakeBorder(frame_l_remap_gray, frame_l_board, 0, 0, stereoNumDisparities, 0, IPL_BORDER_REPLICATE);
+        cv::copyMakeBorder(frame_r_remap_gray, frame_r_board, 0, 0, stereoNumDisparities, 0, IPL_BORDER_REPLICATE);
+
+        sbm->compute(frame_l_board, frame_r_board, disparity_board);
+
+        disparity = disparity_board.colRange(stereoNumDisparities, frame_l_board.cols);
+		mask = cv::Mat::zeros(frame_l.size(), CV_8UC1);
+		cv::rectangle(mask, validRoi[0], cv::Scalar(255), -1);
+		disparity.copyTo(real_disparity, mask);
+
+        cv::remap(frame_l, out_frame_l, rmap[0][0], rmap[0][1], INTER_LINEAR);
+		cv::rectangle(out_frame_l, validRoi[0], CV_RGB(0, 0, 255), 3);
+		cv::remap(frame_r, out_frame_r, rmap[1][0], rmap[1][1], INTER_LINEAR);
+		cv::rectangle(out_frame_r, validRoi[1], CV_RGB(0, 255, 0), 3);
+
+        for (int j = 0; j < out_frame_l.rows; j += 32)//画平行线
+		{
+			cv::line(out_frame_l, cv::Point(0, j), cv::Point(out_frame_l.cols, j), CV_RGB(0, 255, 0));
+			cv::line(out_frame_r, cv::Point(0, j), cv::Point(out_frame_r.cols, j), CV_RGB(0, 255, 0));
+		}
+
+        getDisparityImage(real_disparity, DisparityMat, true);
+
+        cv::imshow("left image", out_frame_l);
+		cv::imshow("right image", out_frame_r);
+
+		cv::reprojectImageTo3D(real_disparity, pointCloud, Q, true);
+		for (int y = 0; y < pointCloud.rows; ++y)
+		{
+			for (int x = 0; x < pointCloud.cols; ++x)
+			{
+				cv::Point3f point = pointCloud.at<cv::Point3f>(y, x);
+				point.y = -point.y;
+				pointCloud.at<cv::Point3f>(y, x) = point;
+			}
+		}
+		std::cout << pointCloud.at<Point3f>(240, 320).z * 1.6 << std::endl;
 
         cvReleaseImage(&img);
         vcap->backFrame();
