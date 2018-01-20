@@ -60,7 +60,6 @@ struct ObjectInfo {
     bool operator >(const ObjectInfo &rhs) const { //降序排序时必须写的函数
         return distance > rhs.distance;
     }
-
 };
 
 std::vector<ObjectInfo>objectinfo;
@@ -156,14 +155,17 @@ int getDisparityImage(cv::Mat &disparity, cv::Mat &disparityImage, bool isColor)
     return 1;
 }
 
+float get_distance(float x) {
+    return 1.226 * x - 0.2828;
+}
 void mouseHandler(int event, int x, int y, int flags, void *param) 
 {
 	if (event == CV_EVENT_LBUTTONDOWN)
 	{
-        pic_info[0] = x;
-		pic_info[1] = y;
+        pic_info[0] = y;
+		pic_info[1] = x;
 		cout << "x:" << x << "y:" << y << endl;
-		printf("Distance to this object is: %f m \n", pointCloud.at<cv::Point3f>(x, y).z * 16);
+		printf("Distance to this object is: %f m \n", get_distance(pointCloud.at<cv::Point3f>(y, x).z * 16));
 		left_mouse = true;
 	}
 	else if (event == CV_EVENT_LBUTTONUP)
@@ -177,6 +179,8 @@ void mouseHandler(int event, int x, int y, int flags, void *param)
 
 
 void Stereo() {
+    pic_info[0] = RESIZE_HEIGHT / 2;
+    pic_info[1] = RESIZE_WIDTH / 2 ;
     unsigned char *yuv422frame = NULL;
     unsigned long yuvframeSize = 0;
 
@@ -327,7 +331,7 @@ void Stereo() {
 			}
 		}
 
-        printf("Distance to this object is: %f m \n", pointCloud.at<cv::Point3f>(pic_info[0], pic_info[1]).z * 16);
+        printf("Distance to this object is: %f m \n", get_distance(pointCloud.at<cv::Point3f>(pic_info[0], pic_info[1]).z * 16));
         cv::setMouseCallback("Disparity Map", mouseHandler, NULL);
 
         cvReleaseImage(&img);

@@ -98,11 +98,19 @@ int V4L2Capture::closeDevice() {
 
 int V4L2Capture::initDevice() {
     int ret;
+    struct v4l2_control ctrl;
     struct v4l2_capability cam_cap;     //显示设备信息
     struct v4l2_cropcap cam_cropcap;    //设置摄像头的捕捉能力
     struct v4l2_fmtdesc cam_fmtdesc;    //查询所有支持的格式：VIDIOC_ENUM_FMT
     struct v4l2_crop cam_crop;          //图像的缩放
     struct v4l2_format cam_format;      //设置摄像头的视频制式、帧格式等
+
+    ret = ioctl(fd_cam, VIDIOC_G_CTRL, &ctrl);
+    if (ret < 0) 
+    {
+        printf("Get exposure auto Type failed\n");
+    }
+    printf("\nGet Exposure Auto Type:[%d]\n", ctrl.value);
 
     /* 使用IOCTL命令VIDIOC_QUERYCAP，获取摄像头的基本信息*/
     ret = ioctl(fd_cam, VIDIOC_QUERYCAP, &cam_cap);
