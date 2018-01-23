@@ -85,7 +85,7 @@ void ReadImage() {
         }
         
         t = (double)cvGetTickCount() - t;
-        printf("Used time is %g ms, fps is %g\n", (t / (cvGetTickFrequency() * 1000)), 1000 / (t / (cvGetTickFrequency() * 1000)));
+//        printf("Used time is %g ms, fps is %g\n", (t / (cvGetTickFrequency() * 1000)), 1000 / (t / (cvGetTickFrequency() * 1000)));
     }
 
     vcap->stopCapture();

@@ -29,7 +29,7 @@ bool left_mouse = false;
 int pic_info[2];
 
 
-cv::Mat cameraMatrix[2], distCoeffs[2], cameraData;
+cv::Mat cameraMatrix[2], distCoeffs[2];
 cv::Mat R, T, E, F;
 cv::Mat R1, R2, P1, P2, Q;
 cv::Mat pointCloud;
@@ -156,7 +156,8 @@ int getDisparityImage(cv::Mat &disparity, cv::Mat &disparityImage, bool isColor)
 }
 
 float get_distance(float x) {
-    return 1.226 * x - 0.2828;
+    // return 1.226 * x - 0.2828;
+    return x * 0.75 + 0.3136;
 }
 void mouseHandler(int event, int x, int y, int flags, void *param) 
 {
@@ -227,7 +228,6 @@ void Stereo() {
         fs["P1"] >> P1;
         fs["P2"] >> P2;
         fs["Q"] >> Q;
-        fs["CamData"] >> cameraData;
         fs.release();
     } else {
         cout << "Error: can not save the extrinsic parameters\n";
